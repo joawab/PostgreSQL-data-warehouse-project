@@ -240,3 +240,64 @@ WHERE
 	) > 31
 ORDER BY
 	DAY ASC;
+
+-- =========================================================
+-- crm_prd_info check
+-- =========================================================
+-- =========================================================
+-- volume check
+-- =========================================================
+-- no anomalies
+SELECT
+	COUNT(*)
+FROM
+	bronze.crm_prd_info
+-- =========================================================
+-- uniqueness check
+-- =========================================================
+-- no duplicates found in crm_prd_info
+SELECT
+	COUNT(*)
+FROM
+	bronze.crm_prd_info
+GROUP BY
+	prd_id
+ORDER BY
+	COUNT(*) DESC;
+
+-- multiple duplicates in prd_key
+-- for further investigation needed: prd_start_dt seems to be switched with prd_end_dt except the one with null value in prd_end_dt
+
+WITH
+	duplicate_prd_key AS (
+		SELECT
+			prd_key,
+			COUNT(*)
+		FROM
+			bronze.crm_prd_info
+		GROUP BY
+			prd_key
+		HAVING COUNT(*) > 1
+		ORDER BY
+			COUNT(*) DESC
+	)
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_key IN (
+		SELECT
+			prd_key
+		FROM
+			duplicate_prd_key
+	)
+	;
+	
+
+	-- =========================================================
+	-- completeness check
+	-- =========================================================
+	-- =========================================================
+	-- consistency check
+	-- =========================================================
