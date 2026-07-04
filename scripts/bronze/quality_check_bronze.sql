@@ -241,7 +241,7 @@ WHERE
 ORDER BY
 	DAY ASC;
 
--- =========================================================
+-- ==========================================================
 -- crm_prd_info check
 -- =========================================================
 -- =========================================================
@@ -252,10 +252,10 @@ SELECT
 	COUNT(*)
 FROM
 	bronze.crm_prd_info
--- =========================================================
--- uniqueness check
--- =========================================================
--- no duplicates found in crm_prd_info
+	-- =========================================================
+	-- uniqueness check
+	-- =========================================================
+	-- no duplicates found in crm_prd_info
 SELECT
 	COUNT(*)
 FROM
@@ -266,8 +266,9 @@ ORDER BY
 	COUNT(*) DESC;
 
 -- multiple duplicates in prd_key
--- for further investigation needed: prd_start_dt seems to be switched with prd_end_dt except the one with null value in prd_end_dt
-
+/* 
+Further investigation needed: prd_start_dt seems to be switched with prd_end_dt except the one with null value in prd_end_dt. Deferred to Silver for handling, not a bronze-stage defect
+*/
 WITH
 	duplicate_prd_key AS (
 		SELECT
@@ -277,7 +278,8 @@ WITH
 			bronze.crm_prd_info
 		GROUP BY
 			prd_key
-		HAVING COUNT(*) > 1
+		HAVING
+			COUNT(*) > 1
 		ORDER BY
 			COUNT(*) DESC
 	)
@@ -291,10 +293,262 @@ WHERE
 			prd_key
 		FROM
 			duplicate_prd_key
-	)
-	;
-	
+	);
 
+-- prd_id and prd_key are the only columns expected to be unique (business/system keys).
+-- Remaining columns are attributes, not identifiers - uniqueness check not applicable.
+-- =========================================================
+-- completeness check
+-- =========================================================
+-- no nulls in prd_id
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_id IS NULL;
+
+-- no nulls in prd_key
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_key IS NULL;
+
+-- no nulls in prd_nm
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_nm IS NULL;
+
+/*
+Identified nulls in prd_cost (e.g. size 58 variants). Initial hypothesis that prd_cost is correlated with size didn't hold. Deffered to Silver, needs further investigation on actual pattern.
+*/
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_cost IS NULL;
+
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_nm LIKE '%HL Road Frame%'
+ORDER BY
+	prd_cost DESC;
+
+-- multiple missing prd_line identified
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_line IS NULL;
+
+/*
+Investigate whether products with missing prd_line have a filled value elsewhere under the same prd_nm (would allow imputation from sibling rows)
+*/
+WITH
+	missing_prd_line AS (
+		SELECT DISTINCT
+			prd_nm
+		FROM
+			bronze.crm_prd_info
+		WHERE
+			prd_line IS NULL
+		ORDER BY
+			prd_nm
+	)
+SELECT
+	prd_nm,
+	STRING_AGG(prd_line, ',')
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_nm IN (
+		SELECT
+			prd_nm
+		FROM
+			missing_prd_line
+	)
+GROUP BY
+	prd_nm;
+
+/*
+Every group returned only nulls. No sibling rows with a filled
+prd_line exist for these product names. Imputation not possible from
+this table alone. Deferred to Silver: apply placeholder default, or
+investigate cross-source lookup.
+*/
+-- no nulls identified in prd_start_dt
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_start_dt IS NULL;
+
+-- multiple nulls identified in prd_end_dt
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_end_dt IS NULL;
+
+-- null values correlated with prd_start_dt (2013-07-01 and 2003-07-01. Investigated on 2026-07-04)
+SELECT
+	prd_start_dt
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_end_dt IS NULL
+GROUP BY
+	prd_start_dt;
+
+/*
+Missing prd_end_dt may indicate ongoing production (most recent version of a product). Deferred to Silver: cross-check against other tables/columns before confirming this assumption. IMPORTANT: See earlier note on prd_start_dt/prd_end_dt possible date-swap issue — resolve that first, as it affects whether this assumption holds. 
+*/
+-- =========================================================
+-- consistency check
+-- =========================================================
+-- no consistency issues on prd_id
+SELECT
+	prd_id
+FROM
+	bronze.crm_prd_info
+WHERE
+	prd_id !~ '^\d+$';
+
+-- no anomalies identified in prd_key length
+
+SELECT
+	LENGTH(prd_key),
+	COUNT (DISTINCT prd_key)
+FROM
+	bronze.crm_prd_info
+GROUP BY
+	LENGTH(prd_key);
+
+-- spotcheck of prd_key for each length
+
+SELECT 
+	DISTINCT prd_key
+FROM
+	bronze.crm_prd_info
+WHERE
+	LENGTH(prd_key) = 13;
+
+SELECT 
+	DISTINCT prd_key
+FROM
+	bronze.crm_prd_info
+WHERE
+	LENGTH(prd_key) = 15;
+
+SELECT 
+	DISTINCT prd_key
+FROM
+	bronze.crm_prd_info
+WHERE
+	LENGTH(prd_key) = 16;
+
+-- syntax check for prd_key 
+
+SELECT
+	prd_key
+FROM
+	bronze.crm_prd_info
+WHERE
+	LENGTH(prd_key) = 13
+	AND prd_key !~ '^[A-Z]{2}-[A-Z]{2}-[A-Z]{2}-(\d{4}|[A-Z]{1}\d{3})$';
+
+SELECT
+	prd_key
+FROM
+	bronze.crm_prd_info
+WHERE
+	LENGTH(prd_key) = 15
+	AND prd_key !~ '^[A-Z]{2}-[A-Z]{2}-[A-Z]{2}-([A-Z]{1}\d{3}|\d{4})-[A-Z]{1}$';
+
+SELECT
+	prd_key
+FROM
+	bronze.crm_prd_info
+WHERE
+	LENGTH(prd_key) = 16
+	AND prd_key !~ '^[A-Z]{2}-[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{4}-\d{2}$';
+
+-- check for any prd_key not matching identified patterns
+
+SELECT
+	*
+FROM
+	bronze.crm_prd_info
+WHERE
+	NOT (
+		(
+			LENGTH(prd_key) = 13
+			AND prd_key ~ '^[A-Z]{2}-[A-Z]{2}-[A-Z]{2}-(\d{4}|[A-Z]{1}\d{3})$'
+		)
+		OR (
+			LENGTH(prd_key) = 15
+			AND prd_key ~ '^[A-Z]{2}-[A-Z]{2}-[A-Z]{2}-([A-Z]{1}\d{3}|\d{4})-[A-Z]{1}$'
+		)
+		OR (
+			LENGTH(prd_key) = 16
+			AND prd_key ~ '^[A-Z]{2}-[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{4}-\d{2}$'
+		)
+	)
+
+	-- =========================================================
+	-- crm_sales_details check
+	-- =========================================================
+	-- =========================================================
+	-- volume check
+	-- =========================================================
+	-- =========================================================
+	-- completeness check
+	-- =========================================================
+	-- =========================================================
+	-- consistency check
+	-- =========================================================
+	-- =========================================================
+	-- erp_cust_az12 check
+	-- =========================================================
+	-- =========================================================
+	-- volume check
+	-- =========================================================
+	-- =========================================================
+	-- completeness check
+	-- =========================================================
+	-- =========================================================
+	-- consistency check
+	-- =========================================================
+	-- =========================================================
+	-- erp_loc_a101 check
+	-- =========================================================
+	-- =========================================================
+	-- volume check
+	-- =========================================================
+	-- =========================================================
+	-- completeness check
+	-- =========================================================
+	-- =========================================================
+	-- consistency check
+	-- =========================================================
+	-- =========================================================
+	-- erp_px_cat_g1v2 check
+	-- =========================================================
+	-- =========================================================
+	-- volume check
+	-- =========================================================
 	-- =========================================================
 	-- completeness check
 	-- =========================================================
