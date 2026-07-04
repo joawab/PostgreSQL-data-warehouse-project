@@ -1,6 +1,23 @@
-/* 
-This script role is used to check data quality of all tables. Each table check has following steps volume, uniqueness, completeness, consistency. Actual data cleaning will happen in Silver Layer, this is only for documentation purposes.
+/*
+=============================================================
+Bronze Layer — Data Quality Investigation
+=============================================================
+Purpose:
+    This script documents the exploratory data profiling process for the 
+    bronze layer: volume, uniqueness, completeness, and consistency checks 
+    per table. It captures findings, hypotheses tested (including rejected 
+    ones), and decisions deferred to the Silver layer.
+
+    This is a one-time investigation log, not a reusable test suite — 
+    queries here were written to understand this specific dataset, not to 
+    be re-run automatically against future data loads.
+
+    A subset of these checks (row count sanity, key uniqueness/null checks, 
+    format validation) will be adapted into standalone, reusable assertions 
+    in /tests, intended to catch regressions in future data loads.
+=============================================================
 */
+
 -- =========================================================
 -- crm_cust_info check
 -- =========================================================
