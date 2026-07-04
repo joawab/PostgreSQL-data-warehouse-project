@@ -252,10 +252,10 @@ SELECT
 	COUNT(*)
 FROM
 	bronze.crm_prd_info
--- =========================================================
--- uniqueness check
--- =========================================================
--- no duplicates found in crm_prd_info
+	-- =========================================================
+	-- uniqueness check
+	-- =========================================================
+	-- no duplicates found in crm_prd_info
 SELECT
 	COUNT(*)
 FROM
@@ -427,40 +427,37 @@ WHERE
 	prd_id !~ '^\d+$';
 
 -- no anomalies identified in prd_key length
-
 SELECT
 	LENGTH(prd_key),
-	COUNT (DISTINCT prd_key)
+	COUNT(DISTINCT prd_key)
 FROM
 	bronze.crm_prd_info
 GROUP BY
 	LENGTH(prd_key);
 
 -- spotcheck of prd_key for each length
-
-SELECT 
-	DISTINCT prd_key
+SELECT DISTINCT
+	prd_key
 FROM
 	bronze.crm_prd_info
 WHERE
 	LENGTH(prd_key) = 13;
 
-SELECT 
-	DISTINCT prd_key
+SELECT DISTINCT
+	prd_key
 FROM
 	bronze.crm_prd_info
 WHERE
 	LENGTH(prd_key) = 15;
 
-SELECT 
-	DISTINCT prd_key
+SELECT DISTINCT
+	prd_key
 FROM
 	bronze.crm_prd_info
 WHERE
 	LENGTH(prd_key) = 16;
 
 -- syntax check for prd_key 
-
 SELECT
 	prd_key
 FROM
@@ -486,7 +483,6 @@ WHERE
 	AND prd_key !~ '^[A-Z]{2}-[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{4}-\d{2}$';
 
 -- check for any prd_key not matching identified patterns
-
 SELECT
 	*
 FROM
@@ -513,9 +509,7 @@ WHERE
 -- =========================================================
 -- volume check
 -- =========================================================
-
 -- no volume anomalies
-	
 SELECT
 	COUNT(*)
 FROM
@@ -524,7 +518,6 @@ FROM
 -- =========================================================
 -- uniqueness check
 -- =========================================================
-
 -- confirm possibility of multiline orders
 SELECT
 	COUNT(*)
@@ -534,7 +527,6 @@ GROUP BY
 	sls_ord_num;
 
 -- check for lines with same sls_ord_num but different sls_order_dt
-
 WITH
 	duplicate_ord_num AS (
 		SELECT
@@ -573,9 +565,7 @@ sls_prd_key, sls_cust_id, sls_order_dt, sls_due_dt, sls_sales, sls_quantity, sls
 -- =========================================================
 -- completeness check
 -- =========================================================
-
 -- no nulls identified in sls_ord_num
-
 SELECT
 	*
 FROM
@@ -584,16 +574,14 @@ WHERE
 	sls_ord_num IS NULL;
 
 -- no nulls identified in sls_prd_key
-
 SELECT
 	*
 FROM
 	bronze.crm_sales_details
 WHERE
 	sls_prd_key IS NULL;
-	
--- no nulls identified in sls_cust_id
 
+-- no nulls identified in sls_cust_id
 SELECT
 	*
 FROM
@@ -602,7 +590,6 @@ WHERE
 	sls_cust_id IS NULL;
 
 -- no nulls identified in sls_ord_dt
-
 SELECT
 	*
 FROM
@@ -611,7 +598,6 @@ WHERE
 	sls_order_dt IS NULL;
 
 -- no nulls identified in sls_ship_dt
-
 SELECT
 	*
 FROM
@@ -620,7 +606,6 @@ WHERE
 	sls_ship_dt IS NULL;
 
 -- no nulls identified in sls_due_dt
-
 SELECT
 	*
 FROM
@@ -629,7 +614,6 @@ WHERE
 	sls_due_dt IS NULL;
 
 -- null values in sls_sales. Deffered to Silver. Possible fix fill in based on sls_quantity and sls_price
-
 SELECT
 	*
 FROM
@@ -638,7 +622,6 @@ WHERE
 	sls_sales IS NULL;
 
 -- null values in sls_price. Deffered to Silver. Possible fix fill in based on sls_sales and sls_price.
-
 SELECT
 	*
 FROM
@@ -649,39 +632,168 @@ WHERE
 -- =========================================================
 -- consistency check
 -- =========================================================
--- =========================================================
--- erp_cust_az12 check
--- =========================================================
--- =========================================================
--- volume check
--- =========================================================
--- =========================================================
--- completeness check
--- =========================================================
--- =========================================================
--- consistency check
--- =========================================================
--- =========================================================
--- erp_loc_a101 check
--- =========================================================
--- =========================================================
--- volume check
--- =========================================================
--- =========================================================
--- completeness check
--- =========================================================
--- =========================================================
--- consistency check
--- =========================================================
--- =========================================================
--- erp_px_cat_g1v2 check
--- =========================================================
--- =========================================================
--- volume check
--- =========================================================
--- =========================================================
--- completeness check
--- =========================================================
--- =========================================================
--- consistency check
--- =========================================================
+/*
+For this table, sls_sales, sls_quantity, and sls_price each follow a 
+two-pass consistency check:
+1. Format/syntax validity — does the value match the expected shape?
+2. Logical validity — is the value plausible given what it represents 
+   (e.g. no negative prices, no zero values, extreme outliers)?
+*/
+
+
+
+-- consistent length of sls_ord_num
+SELECT
+	LENGTH(sls_ord_num)
+FROM
+	bronze.crm_sales_details
+GROUP BY
+	LENGTH(sls_ord_num);
+
+-- consistent syntax of sls_ord_num
+SELECT
+	sls_ord_num
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_ord_num !~ '^SO\d{5}$';
+
+-- consistent length of sls_prd_key
+SELECT
+	LENGTH(sls_prd_key),
+	COUNT(DISTINCT sls_prd_key)
+FROM
+	bronze.crm_sales_details
+GROUP BY
+	LENGTH(sls_prd_key);
+
+-- consistent syntax of sls_prd_key
+SELECT
+	sls_prd_key
+FROM
+	bronze.crm_sales_details
+WHERE
+	NOT (
+		(
+			LENGTH(sls_prd_key) = 7
+			AND sls_prd_key ~ '^[A-Z]{2}-[A-Z0-9][\d]{3}$'
+		)
+		OR (
+			LENGTH(sls_prd_key) = 9
+			AND sls_prd_key ~ '^[A-Z]{2}-[A-Z0-9]{4}-[A-Z]$'
+		)
+		OR (
+			LENGTH(sls_prd_key) = 10
+			AND sls_prd_key ~ '^[A-Z]{2}-[A-Z0-9]{4}-\d{2}$'
+		)
+	)
+	/*
+	Performance note: tested whether wrapping this check in a DISTINCT sls_prd_key CTE would improve speed. EXPLAIN ANALYZE showed no meaningful difference. Kept the simpler direct query.
+	*/
+	-- consistent length of sls_cust_id
+SELECT
+	LENGTH(sls_cust_id),
+	COUNT(DISTINCT sls_cust_id)
+FROM
+	bronze.crm_sales_details
+GROUP BY
+	LENGTH(sls_cust_id);
+
+-- consistent syntax sls_cust_id
+
+SELECT
+	sls_cust_id
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_cust_id !~ '^\d{5}$';
+
+/*
+inconsisten values in sls_prder_dt. 
+1. 0 values 
+2. numeric strings shorter than 8. Hypothesis A : numeric artifcats from Excel.
+
+Deffered to Silver for further handling
+*/
+
+SELECT
+	sls_order_dt
+FROM
+	bronze.crm_sales_details
+WHERE
+	LENGTH(sls_order_dt) <> 8
+	AND sls_order_dt !~ '^\d{8}$';
+
+-- consistent sls_ship_dt
+
+SELECT
+	sls_ship_dt
+FROM
+	bronze.crm_sales_details
+WHERE
+	LENGTH(sls_ship_dt) <> 8
+	AND sls_ship_dt !~ '^\d{8}$';
+
+-- consistent sls_due_dt
+
+SELECT
+	sls_due_dt
+FROM
+	bronze.crm_sales_details
+WHERE
+	LENGTH(sls_due_dt) <> 8
+	AND sls_due_dt !~ '^\d{8}$';
+
+/*
+Identified rows with negative sls_sales values, inconsistent with their corresponding positive sls_price. No decimal values present in this column. Root cause and correct handling (e.g. recalculation vs. other fix) not yet verified — deferred to Silver for investigation.
+*/
+
+	SELECT
+		*
+	FROM
+		bronze.crm_sales_details
+	WHERE
+		sls_sales !~ '^\d+$';
+	
+	-- check sls_sales range and average for extreme outliers values
+	
+	SELECT
+		MIN(CAST(sls_sales AS NUMERIC)) AS min_sales,
+		MAX(CAST(sls_sales AS NUMERIC)) AS max_sales,
+		AVG(CAST(sls_sales AS NUMERIC)) AS avg_sales
+	FROM
+		bronze.crm_sales_details;
+
+-- consistent syntax
+
+SELECT
+	sls_quantity
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_quantity !~ '^\d+$';
+
+-- check sls_quantity range and average for extreme outliers values
+
+SELECT
+	MIN(CAST(sls_quantity AS NUMERIC)) AS min_quantity,
+	MAX(CAST(sls_quantity AS NUMERIC)) AS max_quantity,
+	AVG(CAST(sls_quantity AS NUMERIC)) AS avg_quantity
+FROM
+	bronze.crm_sales_details;
+
+-- syntax check. Negative sls_price identified
+
+SELECT
+	sls_price
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_price !~ '^\d+$';
+
+SELECT
+	MIN(CAST(sls_price AS NUMERIC)) AS min_price,
+	MAX(CAST(sls_price AS NUMERIC)) AS max_price,
+	AVG(CAST(sls_price AS NUMERIC)) AS avg_price
+FROM
+	bronze.crm_sales_details;
