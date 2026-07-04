@@ -574,6 +574,78 @@ sls_prd_key, sls_cust_id, sls_order_dt, sls_due_dt, sls_sales, sls_quantity, sls
 -- completeness check
 -- =========================================================
 
+-- no nulls identified in sls_ord_num
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_ord_num IS NULL;
+
+-- no nulls identified in sls_prd_key
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_prd_key IS NULL;
+	
+-- no nulls identified in sls_cust_id
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_cust_id IS NULL;
+
+-- no nulls identified in sls_ord_dt
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_order_dt IS NULL;
+
+-- no nulls identified in sls_ship_dt
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_ship_dt IS NULL;
+
+-- no nulls identified in sls_due_dt
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_due_dt IS NULL;
+
+-- null values in sls_sales. Deffered to Silver. Possible fix fill in based on sls_quantity and sls_price
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_sales IS NULL;
+
+-- null values in sls_price. Deffered to Silver. Possible fix fill in based on sls_sales and sls_price.
+
+SELECT
+	*
+FROM
+	bronze.crm_sales_details
+WHERE
+	sls_price IS NULL;
+
 -- =========================================================
 -- consistency check
 -- =========================================================
