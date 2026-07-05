@@ -151,6 +151,24 @@ WHERE
 -- =========================================================
 -- consistency check
 -- =========================================================
+
+-- consistent cst_id syntax
+SELECT
+	cst_id
+FROM
+	bronze.crm_cust_info
+WHERE cst_id !~ '^\d{5}$';
+
+-- inconsistent syntax across tables crm_cust_info, erp_loc_a101 erp_cust_az12
+-- mismaching values identified. Deffered to silver: linked to empty rows. Possible solution: remove empty rows.
+
+
+SELECT
+	cst_key
+FROM
+	bronze.crm_cust_info
+WHERE cst_key !~ '^AW\d{8}$';
+
 -- cst_marital_status has consistent values
 SELECT DISTINCT
 	cst_marital_status
