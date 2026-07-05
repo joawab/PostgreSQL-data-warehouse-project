@@ -906,3 +906,76 @@ FROM
 GROUP BY
 	gen
 
+-- =========================================================
+-- erp_loc_a101 check
+-- =========================================================
+
+-- =========================================================
+-- volume check
+-- =========================================================
+-- no load errors
+
+SELECT
+	COUNT(*)
+FROM
+	bronze.erp_loc_a101;
+	
+-- =========================================================
+-- uniquness check
+-- =========================================================
+
+-- all cid are unique
+
+SELECT
+	COUNT(*) AS count,
+	COUNT(DISTINCT cid) AS distinct_count
+FROM
+	bronze.erp_loc_a101;
+
+
+-- country not expected to be unique
+
+-- =========================================================
+-- completeness check
+-- =========================================================
+
+-- no null values in cid
+
+SELECT
+	*
+FROM
+	bronze.erp_loc_a101
+WHERE
+	cid IS NULL;
+
+-- multiple null values. Check business case if nulls are expected
+
+SELECT
+	*
+FROM
+	bronze.erp_loc_a101
+WHERE
+	cntry IS NULL;
+
+-- =========================================================
+-- consistency check
+-- =========================================================
+
+-- cid in erp_loc_a101 inconsistent with cid from erp_cust_az12. erp_loc_a101.cid syntax AW-12345678 ('^AW-\d{8}$').
+
+SELECT
+	*
+FROM
+	bronze.erp_loc_a101
+WHERE
+	cid !~ '^AW-\d{8}$';
+
+-- inconsistent cntry values. Deffered to Silver: possible fix unifying naming convention.
+
+SELECT
+	cntry,
+	COUNT(*)
+FROM
+	bronze.erp_loc_a101
+GROUP BY
+	cntry;
