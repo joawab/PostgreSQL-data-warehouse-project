@@ -27,14 +27,14 @@ CREATE TABLE silver.crm_cust_info (
 	cst_create_date 	DATE
 );
 
-DROP TABLE IF EXISTS silver.crm_prod_info;
+DROP TABLE IF EXISTS silver.crm_prd_info;
 
-CREATE TABLE silver.crm_prod_info (
+CREATE TABLE silver.crm_prd_info (
 	prd_id 			INT,
 	prd_key 		TEXT,
 	prd_nm 			TEXT,
-	prd_cost 		INT,
-	prd_line 		INT,
+	prd_cost 		DECIMAL(10,2),
+	prd_line 		TEXT,
 	prd_start_dt 	DATE,
 	prd_end_dt 		DATE
 );
@@ -48,9 +48,9 @@ CREATE TABLE silver.crm_sales_details (
 	sls_order_dt 	DATE,
 	sls_ship_dt 	DATE,
 	sls_due_dt 		DATE,
-	sls_sales 		INT,
+	sls_sales 		DECIMAL(10,2),
 	sls_quantity 	INT,
-	sls_price 		INT
+	sls_price 		DECIMAL(10,2)
 );
 
 -- ==========================================================
@@ -75,9 +75,9 @@ CREATE TABLE silver.erp_loc_a101 (
 DROP TABLE IF EXISTS silver.erp_px_cat_g1v2;
 
 CREATE TABLE silver.erp_px_cat_g1v2 (
-ID 				TEXT,
-cat 			TEXT,
-subcat 			TEXT,
-maintenance 	
+	id 				TEXT,
+	cat 			TEXT,
+	subcat 			TEXT,
+	maintenance 	BOOLEAN
 );
 
