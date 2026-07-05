@@ -997,3 +997,100 @@ FROM
 	bronze.erp_loc_a101
 GROUP BY
 	cntry;
+
+-- =========================================================
+-- erp_px_cat_g1v2 check
+-- =========================================================
+-- =========================================================
+-- volume check
+-- =========================================================
+
+-- no volume issues
+
+SELECT
+	COUNT(*)
+FROM
+	bronze.erp_px_cat_g1v2;
+	
+-- =========================================================
+-- uniqueness check
+-- =========================================================
+
+-- id is unique
+SELECT
+	COUNT(id) AS count,
+	COUNT(DISTINCT id) AS distinct_count
+FROM
+	bronze.erp_px_cat_g1v2;
+
+-- cat, subcat, maintenance not expected to be unique
+
+-- =========================================================
+-- completeness check
+-- =========================================================
+
+-- no null values in id
+SELECT
+	*
+FROM
+	bronze.erp_px_cat_g1v2
+WHERE
+	id IS NULL;
+
+-- no null values in cat
+SELECT
+	*
+FROM
+	bronze.erp_px_cat_g1v2
+WHERE
+	cat IS NULL;
+
+-- no null values in subcat
+
+SELECT
+	*
+FROM
+	bronze.erp_px_cat_g1v2
+WHERE
+	subcat IS NULL;
+
+-- no null values in maintenance
+SELECT
+	*
+FROM
+	bronze.erp_px_cat_g1v2
+WHERE
+	maintenance IS NULL;
+-- =========================================================
+-- consistency check
+-- =========================================================
+
+-- consistent syntax of id
+
+SELECT
+	*
+FROM
+	bronze.erp_px_cat_g1v2
+WHERE
+	id !~ '^[A-Z]{2}_[A-Z]{2}$';
+
+-- consistent values for cat
+
+SELECT DISTINCT
+	cat
+FROM
+	bronze.erp_px_cat_g1v2;
+
+-- consistent values for subcat
+
+SELECT DISTINCT
+	subcat
+FROM
+	bronze.erp_px_cat_g1v2;
+
+
+-- consistent values for maintenance
+SELECT DISTINCT
+	maintenance
+FROM
+	bronze.erp_px_cat_g1v2;
