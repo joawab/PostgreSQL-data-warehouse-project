@@ -2,36 +2,42 @@
 Adjust the base path below to match your local dataset location before running.
 Expected folder structure: datasets/source_crm/ and datasets/source_erp/
 */
+TRUNCATE TABLE bronze.crm_cust_info
 COPY bronze.crm_cust_info
 FROM
 	'/path/to/datasets/source_crm/cust_info.csv'
 WITH
 	(format csv, header TRUE, delimiter ',');
 
+TRUNCATE TABLE bronze.crm_prd_info
 COPY bronze.crm_prd_info
 FROM
 	'/path/to/datasets/source_crm/prd_info.csv'
 WITH
 	(format csv, header TRUE, delimiter ',');
 
+TRUNCATE bronze.crm_sales_details
 COPY bronze.crm_sales_details
 FROM
 	'/path/to/datasets/source_crm/sales_details.csv'
 WITH
 	(format csv, header TRUE, delimiter ',');
 
+TRUNCATE bronze.erp_cust_az12
 COPY bronze.erp_cust_az12
 FROM
 	'/path/to/datasets/source_erp/cust_az12.csv'
 WITH
 	(format csv, header TRUE, delimiter ',');
 
+TRUNCATE bronze.erp_loc_a101
 COPY bronze.erp_loc_a101
 FROM
 	'/path/to/datasets/source_erp/loc_a101.csv'
 WITH
 	(format csv, header TRUE, delimiter ',');
 
+TRUNCATE bronze.erp_px_cat_g1v2
 COPY bronze.erp_px_cat_g1v2
 FROM
 	'/path/to/datasets/source_erp/px_cat_g1v2.csv'
