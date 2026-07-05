@@ -60,6 +60,6 @@ crm_cust_info ||--o{ crm_sales_details : "cst_id = sls_cust_id"
 crm_prd_info ||--o{ crm_sales_details : "prd_key = sls_prd_key"
 crm_cust_info ||--o| erp_cust_az12 : "cst_key = cid"
 crm_cust_info ||--o| erp_loc_a101 : "cst_key = cid"
-
+crm_prd_info ||--o{ erp_px_cat_g1v2 : "prd_key contains cat_id"
 ```
 
