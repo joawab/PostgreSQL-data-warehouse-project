@@ -814,3 +814,95 @@ SELECT
 	AVG(CAST(sls_price AS NUMERIC)) AS avg_price
 FROM
 	bronze.crm_sales_details;
+
+-- =========================================================
+-- erp_cust_az12 check
+-- =========================================================
+-- =========================================================
+-- volume check
+-- =========================================================
+
+-- no volume issues
+
+SELECT
+	COUNT(*)
+FROM
+	bronze.erp_cust_az12;
+
+-- =========================================================
+-- uniquness check
+-- =========================================================
+
+-- no cid duplicates
+
+SELECT
+	COUNT(*)
+FROM
+	bronze.erp_cust_az12
+GROUP BY
+	cid
+HAVING
+	COUNT(*) > 1;
+
+-- bdate, gen not expected to be unique
+
+-- =========================================================
+-- completeness check
+-- =========================================================
+
+-- no null values in cid
+
+SELECT
+	*
+FROM
+	bronze.erp_cust_az12
+WHERE
+	cid IS NULL;
+
+
+-- no null values in bdate
+
+SELECT
+	*
+FROM
+	bronze.erp_cust_az12
+WHERE
+	bdate IS NULL;
+
+-- null values in gen. Deferred to Silver. Hypothesis: not a mandatory field
+
+SELECT
+	*
+FROM
+	bronze.erp_cust_az12
+WHERE
+	gen IS NULL;
+-- =========================================================
+-- consistency check
+-- =========================================================
+
+-- values in cid follows two patterns (prefix NASAW or AW). Deferred to Silver to investigate if it's expected result.
+
+SELECT *
+FROM bronze.erp_cust_az12
+WHERE cid !~ '^(NASAW|AW)\d{8}$';
+
+-- consistent syntax in bdate
+
+SELECT
+	*
+FROM
+	bronze.erp_cust_az12
+WHERE
+	bdate !~ '^\d{4}-\d{2}-\d{2}$';
+
+-- inconsistent values in gen. Deferred to Silver: possible fix unifying values F = Female, M = Male, null.
+
+SELECT
+	gen,
+	COUNT(*)
+FROM
+	bronze.erp_cust_az12
+GROUP BY
+	gen
+
