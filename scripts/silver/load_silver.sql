@@ -23,7 +23,7 @@ Findings from bronze profiling:
 
 TRUNCATE TABLE silver.crm_cust_info;
 
-INSERT INTO silver.crm_cust_info 
+INSERT INTO silver.crm_cust_info (cst_id, cst_key, cst_firstname, cst_lastname, cst_marital_status, cst_gndr, cst_create_date)
 WITH
 	deduplication AS (
 		SELECT
@@ -52,7 +52,7 @@ SELECT
 WHERE
 	last_entry = 1;
 
--- deduplicated, trimmed, tested agains any null values (except null cst_gndr: these are expected)
+-- deduplicated, trimmed, tested against any null values (except null cst_gndr: these are expected).
 
 -- =========================================================
 -- crm_prd_info
@@ -67,6 +67,45 @@ Findings from bronze profiling:
 - prd_line has nulls with no fillable sibling values.
 - prd_key contains erp_px_cat_g1v2.id as a substring (confirmed).
 */
+TRUNCATE TABLE silver.crm_prd_info;
+
+INSERT INTO silver.crm_prd_info (prd_id, prd_key, cat_id, sls_prd_key, prd_nm, prd_cost, prd_line, prd_start_dt, prd_end_dt)
+
+SELECT
+	CAST(prd_id AS INTEGER),
+	TRIM(prd_key) AS prd_key,
+	REPLACE(LEFT(prd_key, 5), '-', '_') AS cat_id,
+	TRIM(SUBSTRING(
+		prd_key
+		FROM
+			7 FOR LENGTH(prd_key)
+	)) AS sls_prd_key,
+	TRIM(prd_nm) AS prd_nm,
+	CAST(prd_cost AS DECIMAL),
+	TRIM(CASE
+		WHEN prd_line IS NULL THEN 'N/A'
+		ELSE prd_line
+	END) AS prd_line,
+	CAST(prd_start_dt AS DATE),
+	CAST(LEAD(prd_start_dt) OVER (
+		PARTITION BY
+			prd_key
+		ORDER BY
+			prd_start_dt ASC
+	) AS DATE) -1 AS prd_end_dt
+FROM
+	bronze.crm_prd_info;
+
+
+-- derived cat_id from prd_key
+-- derived sls_prd_key from prd_key
+-- no clear pattern to fill in null values in prd_line, replaced with N/A
+-- no clear pattern to fill in null values in prd_cost, left as NULL
+-- derived prd_end_dt from prd_start_dt
+ 
+
+	
+
 
 
 -- =========================================================
@@ -76,7 +115,7 @@ Findings from bronze profiling:
 Findings from bronze profiling:
 - sls_order_dt contains placeholder '0' values and numeric values 
   resembling unconverted Excel serial dates.
-- sls_ship_dt / sls_due_dt not yet checked for the same pattern.
+- sls_ship_dt / sls_due_dt are consistent.
 - sls_sales has nulls and a few negative values; both misalign with 
   positive sls_price. A quantity x price relationship was observed but 
   not verified as the correct fix.
@@ -90,7 +129,6 @@ Findings from bronze profiling:
 -- =========================================================
 /*
 Findings from bronze profiling:
-- Completeness/consistency checks not yet finished for this table.
 - gen values likely need to align with crm_cust_info.cst_gndr, since 
   both may describe the same customer attribute.
 - cid is expected to correspond to crm_cust_info.cst_key.
@@ -102,7 +140,6 @@ Findings from bronze profiling:
 -- =========================================================
 /*
 Findings from bronze profiling:
-- Completeness/consistency checks not yet finished for this table.
 - cid is expected to correspond to crm_cust_info.cst_key.
 */
 

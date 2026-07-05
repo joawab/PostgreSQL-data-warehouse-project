@@ -32,6 +32,8 @@ DROP TABLE IF EXISTS silver.crm_prd_info;
 CREATE TABLE silver.crm_prd_info (
 	prd_id 			INT,
 	prd_key 		TEXT,
+	cat_id			TEXT,
+	sls_prd_key		TEXT,
 	prd_nm 			TEXT,
 	prd_cost 		DECIMAL(10,2),
 	prd_line 		TEXT,
