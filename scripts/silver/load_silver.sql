@@ -200,9 +200,32 @@ FROM
 -- =========================================================
 /*
 Findings from bronze profiling:
-- cid is expected to correspond to crm_cust_info.cst_key.
+- cid is expected to correspond to crm_cust_info.cst_key. erp_loc_a101 syntax AW-12345678
+- multiple null values in cntry.
+- inconsistent cntry values.
 */
+TRUNCATE TABLE silver.erp_loc_a101;
 
+INSERT INTO silver.erp_loc_a101 (cid, cntry)
+
+SELECT
+	REPLACE(TRIM(cid), '-', '') AS cid,
+	CASE
+		WHEN TRIM(cntry) LIKE 'Canada' THEN 'CA'
+		WHEN TRIM(cntry) LIKE 'France' THEN 'FR'
+		WHEN TRIM(cntry) LIKE 'United Kingdom' THEN 'UK'
+		WHEN TRIM(cntry) LIKE 'Germany' THEN 'DE'
+		WHEN TRIM(cntry) LIKE 'Australia' THEN 'AU'
+		WHEN TRIM(cntry) IN ('United States', 'USA') THEN 'US'
+		WHEN TRIM(cntry) IS NULL
+		OR TRIM(cntry) = '' THEN 'n/a'
+		ELSE TRIM(cntry)
+	END AS cntry
+FROM
+	bronze.erp_loc_a101;
+
+-- fixed cid syntax
+-- unified cntry names 
 
 -- =========================================================
 -- erp_px_cat_g1v2
