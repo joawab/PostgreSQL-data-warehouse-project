@@ -172,7 +172,27 @@ Findings from bronze profiling:
 - gen values likely need to align with crm_cust_info.cst_gndr, since 
   both may describe the same customer attribute.
 - cid is expected to correspond to crm_cust_info.cst_key.
+-- values in cid follows two patterns (prefix NASAW or AW)
+-- inconsistent values in gen. 
 */
+
+TRUNCATE TABLE silver.erp_cust_az12;
+
+INSERT INTO silver.erp_cust_az12 (cid, bdate, gen)
+SELECT
+	CASE
+		WHEN cid LIKE 'NAS%' THEN SUBSTRING(cid, 4, LENGTH(cid))
+		ELSE cid
+	END AS cid,
+	CAST(bdate AS date) AS bdate,
+	TRIM(CASE WHEN gen = 'Male' THEN 'M'
+		WHEN gen = 'Female' THEN 'F' 
+		ELSE 'n/a' END) AS gen
+FROM
+	bronze.erp_cust_az12;
+
+-- unified cid
+-- unified gen column
 
 
 -- =========================================================
