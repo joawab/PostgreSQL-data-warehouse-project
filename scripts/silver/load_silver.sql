@@ -124,7 +124,7 @@ INSERT INTO silver.crm_sales_details (sls_ord_num,sls_prd_key,sls_cust_id,sls_or
 SELECT
 	sls_ord_num,
 	sls_prd_key,
-	sls_cust_id,
+	CAST(sls_cust_id AS INTEGER),
 	CAST(
 		(
 			CASE
