@@ -103,11 +103,6 @@ FROM
 -- no clear pattern to fill in null values in prd_cost, left as NULL
 -- derived prd_end_dt from prd_start_dt
  
-
-	
-
-
-
 -- =========================================================
 -- crm_sales_details
 -- =========================================================
@@ -122,7 +117,52 @@ Findings from bronze profiling:
 - sls_price has some zero values.
 - sls_ord_num is not unique by design (multi-line orders).
 */
+TRUNCATE TABLE silver.crm_sales_details;
 
+INSERT INTO silver.crm_sales_details (sls_ord_num,sls_prd_key,sls_cust_id,sls_order_dt,sls_ship_dt,sls_due_dt,sls_sales,sls_quantity,sls_price)
+
+SELECT
+	sls_ord_num,
+	sls_prd_key,
+	sls_cust_id,
+	CAST(
+		(
+			CASE
+				WHEN LENGTH(sls_order_dt) < 8 THEN NULL
+				ELSE sls_order_dt
+			END
+		) AS DATE
+	) AS sls_order_dt,
+	CAST(sls_ship_dt AS DATE),
+	CAST(sls_due_dt AS DATE),
+	CASE
+		WHEN CAST(sls_sales AS DECIMAL) <= 0 THEN CAST(sls_quantity AS INTEGER) * CAST(sls_price AS DECIMAL)
+		WHEN CAST(sls_sales AS DECIMAL) IS NULL THEN CAST(sls_quantity AS INTEGER) * CAST(sls_price AS DECIMAL)
+		ELSE CAST(sls_sales AS DECIMAL)
+	END AS sls_sales,
+	CAST(sls_quantity AS INTEGER),
+	CASE
+		WHEN CAST(sls_price AS DECIMAL) IS NULL THEN CAST(sls_sales AS DECIMAL) / CAST(sls_quantity AS INTEGER) 
+		WHEN CAST(sls_price AS DECIMAL) <= 0 THEN CAST(sls_sales AS DECIMAL) / CAST(sls_quantity AS INTEGER) 
+		ELSE CAST(sls_price AS DECIMAL) 
+	END AS sls_price
+FROM
+	bronze.crm_sales_details
+	;
+
+/*
+Business decisions and verifications for silver.crm_sales_details:
+- sls_sales/sls_price recalculation (quantity x price) is 
+  a business decision, not a formula independently verified against clean 
+  source data — applied to resolve nulls and non-positive values in either 
+  column.
+- sls_quantity confirmed as all positive integers (>0) during bronze 
+  profiling — division by zero not a risk in the sls_price recalculation.
+- sls_order_dt: values with length < 8 are set to NULL rather than cast, 
+  since neither is a valid date string.
+- sls_ship_dt/sls_due_dt: format confirmed clean via regex check during 
+  bronze profiling — no additional null-handling applied.
+*/
 
 -- =========================================================
 -- erp_cust_az12
