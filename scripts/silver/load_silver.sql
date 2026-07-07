@@ -225,7 +225,7 @@ FROM
 	bronze.erp_loc_a101;
 
 -- fixed cid syntax
--- unified cntry names 
+-- normalized cntry names 
 
 -- =========================================================
 -- erp_px_cat_g1v2
@@ -234,4 +234,16 @@ FROM
 Findings from bronze profiling:
 - maintenance expected to be a clean Yes/No field, to be cast to BOOLEAN.
 - id corresponds to a substring within crm_prd_info.prd_key (confirmed).
+- no data quality issues detected in bronze.
 */
+TRUNCATE TABLE silver.erp_px_cat_g1v2;
+
+INSERT INTO silver.erp_px_cat_g1v2 (id,	cat, subcat, maintenance)
+
+SELECT
+	id,
+	cat,
+	subcat,
+	CAST(maintenance AS BOOLEAN) AS maintenance
+FROM
+	bronze.erp_px_cat_g1v2;
